@@ -4,7 +4,7 @@ defmodule FuelCounterUpper do
   end
 
   def module_fuel_required(module_mass) do
-    Stream.iterate(module_mass, &FuelCounterUpper.fuel_required/1)
+    Stream.iterate(module_mass, &fuel_required/1)
       |> Enum.take_while(fn x -> x > 0 end)
       |> Enum.drop(1) # Exclude the mass of the module
       |> Enum.sum
