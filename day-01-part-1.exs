@@ -4,7 +4,7 @@ defmodule FuelCounterUpper do
   end
 end
 
-{:ok, input} = File.read("input-day-01.exs")
+{:ok, input} = File.read("day-01-input.txt")
 
 total_fuel_required = input
   |> String.split("\n", trim: true)
