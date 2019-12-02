@@ -1,4 +1,17 @@
-defmodule FuelCounterUpper do
+defmodule Day1 do
+  @input_file "day-01-input.txt"
+
+  def normalize_input(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  def get_input do
+    {:ok, input} = File.read(@input_file)
+    normalize_input(input)
+  end
+
   @doc """
   Fuel required to launch a given module is based on its mass.
   Specifically, to find the fuel required for a module, take its
@@ -18,24 +31,23 @@ defmodule FuelCounterUpper do
   """
   def total_fuel_required(module_mass) do
     Stream.iterate(module_mass, &fuel_required/1)
-      |> Enum.take_while(fn x -> x > 0 end)
-      |> Enum.drop(1) # Exclude the mass of the module
-      |> Enum.sum
+    |> Enum.take_while(fn x -> x > 0 end)
+    |> Enum.drop(1) # Exclude the mass of the module
+    |> Enum.sum
+  end
+
+  def part1 do
+    get_input()
+    |> Enum.map(&fuel_required/1)
+    |> Enum.sum
+  end
+
+  def part2 do
+    get_input()
+    |> Enum.map(&total_fuel_required/1)
+    |> Enum.sum
   end
 end
 
-{:ok, input} = File.read("day-01-input.txt")
-module_masses = input
-  |> String.split("\n", trim: true)
-  |> Enum.map(&String.to_integer/1)
-
-part1 = module_masses
-  |> Enum.map(&FuelCounterUpper.fuel_required/1)
-  |> Enum.sum
-
-part2 = module_masses
-  |> Enum.map(&FuelCounterUpper.total_fuel_required/1)
-  |> Enum.sum
-
-IO.puts "Part 1: #{part1}"
-IO.puts "Part 2: #{part2}"
+IO.puts "Part 1: #{Day1.part1}"
+IO.puts "Part 2: #{Day1.part2}"
