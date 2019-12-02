@@ -1,15 +1,26 @@
 defmodule Day1 do
   @input_file "day-01-input.txt"
 
-  def normalize_input(input) do
+  defp normalize_input(input) do
     input
     |> String.split("\n", trim: true)
     |> Enum.map(&String.to_integer/1)
   end
 
-  def get_input do
+  defp get_input do
     {:ok, input} = File.read(@input_file)
     normalize_input(input)
+  end
+
+  defp fuel_required(mass) do
+    trunc(mass / 3) - 2
+  end
+
+  defp total_fuel_required(module_mass) do
+    Stream.iterate(module_mass, &fuel_required/1)
+    |> Enum.take_while(fn x -> x > 0 end)
+    |> Enum.drop(1) # Exclude the mass of the module
+    |> Enum.sum
   end
 
   @doc """
@@ -17,8 +28,10 @@ defmodule Day1 do
   Specifically, to find the fuel required for a module, take its
   mass, divide by three, round down, and subtract 2.
   """
-  def fuel_required(mass) do
-    trunc(mass / 3) - 2
+  def part1 do
+    get_input()
+    |> Enum.map(&fuel_required/1)
+    |> Enum.sum
   end
 
   @doc """
@@ -29,19 +42,6 @@ defmodule Day1 do
   input mass and repeat the process, continuing until a fuel
   requirement is zero or negative.
   """
-  def total_fuel_required(module_mass) do
-    Stream.iterate(module_mass, &fuel_required/1)
-    |> Enum.take_while(fn x -> x > 0 end)
-    |> Enum.drop(1) # Exclude the mass of the module
-    |> Enum.sum
-  end
-
-  def part1 do
-    get_input()
-    |> Enum.map(&fuel_required/1)
-    |> Enum.sum
-  end
-
   def part2 do
     get_input()
     |> Enum.map(&total_fuel_required/1)
