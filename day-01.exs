@@ -12,11 +12,11 @@ defmodule Day1 do
     normalize_input(input)
   end
 
-  defp fuel_required(mass) do
+  def fuel_required(mass) do
     trunc(mass / 3) - 2
   end
 
-  defp total_fuel_required(module_mass) do
+  def total_fuel_required(module_mass) do
     Stream.iterate(module_mass, &fuel_required/1)
     |> Enum.take_while(fn x -> x > 0 end)
     |> Enum.drop(1) # Exclude the mass of the module
