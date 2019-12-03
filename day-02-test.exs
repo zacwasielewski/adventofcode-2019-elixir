@@ -24,7 +24,7 @@ defmodule Day2Test do
   end
 
   test "part_2" do
-    assert Day2.part2() === [%{noun: 48, verb: 47, output: 19690720, solution: 4847}]
+    assert Day2.part2() === [4847]
   end
   #test "part_2_example_1" do
   #  # 1,1,1,4,99,5,6,0,99 becomes 30,1,1,4,2,5,6,0,99.

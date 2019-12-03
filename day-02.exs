@@ -12,7 +12,7 @@ defmodule Day2 do
     input
   end
 
-  defp reset_program(intcode, noun, verb) do
+  defp set_program_state(intcode, noun, verb) do
     intcode
     |> List.replace_at(1, noun)
     |> List.replace_at(2, verb)
@@ -74,7 +74,7 @@ defmodule Day2 do
   def part1 do
     intcode = get_input()
     |> parse_intcode_string()
-    |> reset_program(12, 2) # Reset program to 1202 alarm state
+    |> set_program_state(12, 2) # Reset program to 1202 alarm state
     run_intcode(intcode)
   end
 
@@ -82,29 +82,25 @@ defmodule Day2 do
     intcode = parse_intcode_string(get_input())
 
     # Generate a list of noun/verb pairs to test
-    test_inputs = Enum.flat_map(1..100, fn noun ->
-      Enum.map(1..100, fn verb ->
-        [noun, verb]
-      end)
+    test_inputs = 100..9999 |> Enum.map(fn x ->
+      [div(x, 100), rem(x, 100)]
     end)
 
     test_inputs
     |> Enum.map(fn inputs ->
       [noun, verb] = inputs
       %{
-        noun: noun,
-        verb: verb,
         output: intcode
-          |> reset_program(noun, verb)
+          |> set_program_state(noun, verb)
           |> run_intcode()
           |> List.first,
         solution: noun * 100 + verb
       }
     end)
     |> Enum.filter(fn x -> x[:output] === 19690720 end)
+    |> Enum.map(fn x -> x[:solution] end)
   end
 end
 
 IO.puts "Part 1: #{List.first(Day2.part1)}"
-IO.puts "Part 2:"
-IO.inspect Day2.part2
+IO.puts "Part 2: #{List.first(Day2.part2)}"
