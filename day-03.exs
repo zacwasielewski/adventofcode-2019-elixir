@@ -49,16 +49,15 @@ defmodule Day3 do
   end
 
   defp distance_from_central_port(coords) do
-    # The Manhattan Distance is (x1 - x2) + (y1 - y2),
-    # but since the central port is always at [0, 0],
-    # we can simplify it a bit.
-    [x, y] = coords
-    x + y
+    # Manhattan Distance is |x1 - x2| + |y1 - y2|
+    [x1, y1] = @central_port
+    [x2, y2] = coords
+    abs(x2 - x1) + abs(y2 - y1)
   end
 
   defp find_intersections(graph1, graph2) do
-    mapset1 = MapSet.new(graph1) |> MapSet.delete(@central_port)
-    mapset2 = MapSet.new(graph2) |> MapSet.delete(@central_port)
+    mapset1 = MapSet.new(graph1) 
+    mapset2 = MapSet.new(graph2)
     MapSet.intersection(mapset1, mapset2)
   end
 
@@ -67,6 +66,7 @@ defmodule Day3 do
     graph2 = plot_wire(wire2)
     
     find_intersections(graph1, graph2)
+    |> MapSet.delete(@central_port) # Don't count the central port as an intersection
     |> Enum.map(&distance_from_central_port/1)
     |> Enum.min
   end
