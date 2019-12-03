@@ -41,16 +41,18 @@ defmodule Day2 do
     Enum.at(intcode, opcode_pos + 3)
   end
 
-  defp process_opcode(1, intcode, pos) do
+  defp process_intcode(:add, intcode, pos) do
     [input1, input2] = get_input_values(intcode, pos)
     output_position = get_output_position(intcode, pos)
-    List.replace_at(intcode, output_position, input1 + input2)
+    output_value = input1 + input2
+    List.replace_at(intcode, output_position, output_value)
   end
 
-  defp process_opcode(2, intcode, pos) do
+  defp process_intcode(:multiply, intcode, pos) do
     [input1, input2] = get_input_values(intcode, pos)
     output_position = get_output_position(intcode, pos)
-    List.replace_at(intcode, output_position, input1 * input2)
+    output_value = input1 * input2
+    List.replace_at(intcode, output_position, output_value)
   end
 
   def run_intcode(intcode) do
@@ -60,8 +62,8 @@ defmodule Day2 do
     Enum.reduce_while(opcode_positions, intcode, fn pos, acc ->
       opcode = get_opcode(acc, pos)
       case opcode do
-        1  -> {:cont, process_opcode(1, acc, pos) }
-        2  -> {:cont, process_opcode(2, acc, pos) }
+        1  -> {:cont, process_intcode(:add, acc, pos) }
+        2  -> {:cont, process_intcode(:multiply, acc, pos) }
         99 -> {:halt, acc}
       end
     end)
