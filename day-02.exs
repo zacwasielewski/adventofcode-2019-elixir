@@ -24,7 +24,7 @@ defmodule Day2 do
   end
 
   defp get_input_values(intcode, opcode_pos) do
-    [ input1_pos, input2_pos ] = get_input_positions(intcode, opcode_pos)
+    [input1_pos, input2_pos] = get_input_positions(intcode, opcode_pos)
     [
       Enum.at(intcode, input1_pos),
       Enum.at(intcode, input2_pos)
@@ -33,6 +33,14 @@ defmodule Day2 do
 
   defp get_output_position(intcode, opcode_pos) do
     Enum.at(intcode, opcode_pos + 3)
+  end
+
+  defp get_instruction(intcode, opcode_pos) do
+    %{
+      opcode: get_opcode(intcode, opcode_pos),
+      inputs: get_input_values(intcode, opcode_pos),
+      output_pos: get_output_position(intcode, opcode_pos)
+    }
   end
 
   defp parse_program_state(state) do
@@ -47,13 +55,17 @@ defmodule Day2 do
   end
 
   defp apply_operation(operation, intcode, opcode_pos) do
-    [input1, input2] = get_input_values(intcode, opcode_pos)
-    output_position = get_output_position(intcode, opcode_pos)
+    %{
+      inputs: [input1, input2],
+      output_pos: output_pos
+    } = get_instruction(intcode, opcode_pos)
+
     output_value = case operation do
       :add -> input1 + input2
       :multiply -> input1 * input2
     end
-    List.replace_at(intcode, output_position, output_value)
+    
+    List.replace_at(intcode, output_pos, output_value)
   end
 
   def process_instructions(intcode) do
@@ -89,9 +101,7 @@ defmodule Day2 do
     intcode = get_input()
     goal = 19690720
 
-    # This is the range of all possible input states to check,
-    # assuming that nouns and verbs are only two digits each:
-    100..9999
+    100..9999 # All possible input states, assuming nouns and verbs are limited to two digits
     |> Enum.filter(fn state ->
         run_program_with_state(intcode, state) === goal
       end)
