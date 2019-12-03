@@ -1,26 +1,15 @@
 defmodule Day2 do
   @input_file "day-02-input.txt"
 
-  defp parse_intcode_string(input) do
-    input
+  defp parse_intcode_string(string) do
+    string
     |> String.split(",", trim: true)
     |> Enum.map(&String.to_integer/1)
   end
 
   defp get_input do
     {:ok, input} = File.read(@input_file)
-    input
-  end
-
-  defp parse_program_state(state) do
-    [noun, verb] = [div(state, 100), rem(state, 100)]
-  end
-
-  defp set_program_state(intcode, state_code) do
-    [noun, verb] = parse_program_state(state_code)
-    intcode
-    |> List.replace_at(1, noun)
-    |> List.replace_at(2, verb)
+    parse_intcode_string(input)
   end
 
   defp get_opcode(intcode, opcode_pos) do
@@ -35,10 +24,10 @@ defmodule Day2 do
   end
 
   defp get_input_values(intcode, opcode_pos) do
-    input_positions = get_input_positions(intcode, opcode_pos)
+    [ input1_pos, input2_pos ] = get_input_positions(intcode, opcode_pos)
     [
-      Enum.at(intcode, List.first(input_positions)),
-      Enum.at(intcode, List.last(input_positions))
+      Enum.at(intcode, input1_pos),
+      Enum.at(intcode, input2_pos)
     ]
   end
 
@@ -46,60 +35,69 @@ defmodule Day2 do
     Enum.at(intcode, opcode_pos + 3)
   end
 
-  defp process_intcode(:add, intcode, pos) do
-    [input1, input2] = get_input_values(intcode, pos)
-    output_position = get_output_position(intcode, pos)
-    output_value = input1 + input2
+  defp parse_program_state(state) do
+    [_noun, _verb] = [div(state, 100), rem(state, 100)]
+  end
+
+  defp set_program_state(intcode, state) do
+    [noun, verb] = parse_program_state(state)
+    intcode
+    |> List.replace_at(1, noun)
+    |> List.replace_at(2, verb)
+  end
+
+  defp apply_operation(operation, intcode, opcode_pos) do
+    [input1, input2] = get_input_values(intcode, opcode_pos)
+    output_position = get_output_position(intcode, opcode_pos)
+    output_value = case operation do
+      :add -> input1 + input2
+      :multiply -> input1 * input2
+    end
     List.replace_at(intcode, output_position, output_value)
   end
 
-  defp process_intcode(:multiply, intcode, pos) do
-    [input1, input2] = get_input_values(intcode, pos)
-    output_position = get_output_position(intcode, pos)
-    output_value = input1 * input2
-    List.replace_at(intcode, output_position, output_value)
-  end
-
-  def run_intcode(intcode) do
-    # Opcodes are positioned at every 4th item of the intcode (beginning at 1)
+  def process_instructions(intcode) do
     opcode_positions = Stream.take_every(0..length(intcode), 4)
 
-    Enum.reduce_while(opcode_positions, intcode, fn pos, acc ->
-      opcode = get_opcode(acc, pos)
+    Enum.reduce_while(opcode_positions, intcode, fn opcode_pos, acc ->
+      opcode = get_opcode(acc, opcode_pos)
       case opcode do
-        1  -> {:cont, process_intcode(:add, acc, pos) }
-        2  -> {:cont, process_intcode(:multiply, acc, pos) }
+        1  -> {:cont, apply_operation(:add, acc, opcode_pos) }
+        2  -> {:cont, apply_operation(:multiply, acc, opcode_pos) }
         99 -> {:halt, acc}
       end
     end)
   end
 
-  @doc """
-  """
+  defp get_program_output(intcode) do
+    List.first(intcode)
+  end
+
+  def run_program_with_state(intcode, state) do
+    intcode
+    |> set_program_state(state)
+    |> process_instructions()
+    |> get_program_output()
+  end
+
   def part1 do
     intcode = get_input()
-    |> parse_intcode_string()
-    |> set_program_state(1202) # Reset program to 1202 alarm state
-    run_intcode(intcode)
+    run_program_with_state(intcode, 1202)
   end
 
   def part2 do
-    intcode = parse_intcode_string(get_input())
+    intcode = get_input()
+    goal = 19690720
 
-    100..9999 # Range of all possible input states to check
-    |> Enum.map(fn state ->
-      %{
-        output: intcode
-          |> set_program_state(state)
-          |> run_intcode()
-          |> List.first,
-        solution: state
-      }
-    end)
-    |> Enum.filter(fn x -> x[:output] === 19690720 end)
-    |> Enum.map(fn x -> x[:solution] end)
+    # This is the range of all possible input states to check,
+    # assuming that nouns and verbs are only two digits each:
+    100..9999
+    |> Enum.filter(fn state ->
+        run_program_with_state(intcode, state) === goal
+      end)
+    |> List.first
   end
 end
 
-IO.puts "Part 1: #{List.first(Day2.part1)}"
-IO.puts "Part 2: #{List.first(Day2.part2)}"
+IO.puts "Part 1: #{Day2.part1}"
+IO.puts "Part 2: #{Day2.part2}"
