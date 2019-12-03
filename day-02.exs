@@ -12,14 +12,10 @@ defmodule Day2 do
     input
   end
 
-  defp reset_to_1202_program_alarm_state(intcode) do
-    reset_program_state(intcode, 12,  2)
-  end
-
-  defp reset_program_state(intcode, first, second) do
+  defp reset_program(intcode, noun, verb) do
     intcode
-    |> List.replace_at(1, first)
-    |> List.replace_at(2, second)
+    |> List.replace_at(1, noun)
+    |> List.replace_at(2, verb)
   end
 
   defp get_opcode(intcode, opcode_pos) do
@@ -74,14 +70,16 @@ defmodule Day2 do
   @doc """
   """
   def part1 do
-    intcode = reset_to_1202_program_alarm_state(parse_intcode_string(get_input()))
+    intcode = get_input()
+    |> parse_intcode_string()
+    |> reset_program(12, 2) # Reset program to 1202 alarm state
     run_intcode(intcode)
   end
 
   def part2 do
-    intcode_string = parse_intcode_string(get_input())
+    intcode = parse_intcode_string(get_input())
 
-    # Generate a list of noun/verb pairs to tet
+    # Generate a list of noun/verb pairs to test
     test_inputs = Enum.flat_map(1..100, fn noun ->
       Enum.map(1..100, fn verb ->
         [noun, verb]
@@ -91,11 +89,13 @@ defmodule Day2 do
     test_inputs
     |> Enum.map(fn inputs ->
       [noun, verb] = inputs
-      intcode = reset_program_state(intcode_string, noun, verb)
       %{
         noun: noun,
         verb: verb,
-        output: List.first(run_intcode(intcode)),
+        output: intcode
+          |> reset_program(noun, verb)
+          |> run_intcode()
+          |> List.first,
         solution: noun * 100 + verb
       }
     end)
