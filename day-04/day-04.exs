@@ -41,18 +41,6 @@ defmodule Day4 do
     end)
   end
 
-  def is_valid_password(password) do
-    is_correct_length(password) &&
-    has_consecutive_siblings(password) &&
-    does_not_decrease(password)
-  end
-
-  def is_valid_password_constrained(password) do
-    is_correct_length(password) &&
-    has_consecutive_twins(password) &&
-    does_not_decrease(password)
-  end
-
   def part1 do
     range = get_input()
 
