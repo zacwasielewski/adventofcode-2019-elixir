@@ -28,14 +28,18 @@ defmodule Day4Test do
   end
 
   def is_valid_password(:part1, password) do
-    Day4.is_correct_length(password) &&
-    Day4.has_consecutive_siblings(password) &&
-    Day4.does_not_decrease(password)
+    import PasswordChecker
+    
+    is_correct_length(password) &&
+    has_consecutive_siblings(password) &&
+    does_not_decrease(password)
   end
 
   def is_valid_password(:part2, password) do
-    Day4.is_correct_length(password) &&
-    Day4.has_consecutive_twins(password) &&
-    Day4.does_not_decrease(password)
+    import PasswordChecker
+
+    is_correct_length(password) &&
+    has_consecutive_twins(password) &&
+    does_not_decrease(password)
   end
 end
