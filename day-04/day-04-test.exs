@@ -16,15 +16,15 @@ defmodule Day4Test do
   end
 
   test "part_2_example_1" do
-    assert Day4.is_valid_password_extended(112233)
+    assert Day4.is_valid_password_constrained(112233)
   end
 
   test "part_2_example_2" do
-    refute Day4.is_valid_password_extended(123444)
+    refute Day4.is_valid_password_constrained(123444)
   end
 
   test "part_2_example_3" do
-    assert Day4.is_valid_password_extended(111122)
+    assert Day4.is_valid_password_constrained(111122)
   end
 
   #test "part_1_example_1" do

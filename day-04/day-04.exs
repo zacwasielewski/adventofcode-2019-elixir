@@ -19,25 +19,20 @@ defmodule Day4 do
     length === (number |> Integer.digits |> Enum.count)
   end
 
-  #defp has_consecutive_matching_digits(number) do
-  #  digits = Integer.digits(number)
-  #  Enum.dedup(digits) !== digits
-  #end
-
-  defp has_consecutive_siblings(number) do
-    Integer.digits(number)
+  defp has_consecutive_siblings(password) do
+    Integer.digits(password)
     |> Enum.chunk_by(fn n -> n end)
     |> Enum.any?(fn chunk -> Enum.count(chunk) > 1 end)
   end
 
-  defp has_consecutive_twins(number) do
-    Integer.digits(number)
+  defp has_consecutive_twins(password) do
+    Integer.digits(password)
     |> Enum.chunk_by(fn n -> n end)
     |> Enum.any?(fn chunk -> Enum.count(chunk) === 2 end)
   end
 
-  defp does_not_decrease(number) do
-    Integer.digits(number)
+  defp does_not_decrease(password) do
+    Integer.digits(password)
     |> Enum.chunk_every(2, 1)
     |> Enum.filter(fn chunk -> Enum.count(chunk) === 2 end)
     |> Enum.all?(fn pair ->
@@ -47,15 +42,15 @@ defmodule Day4 do
   end
 
   def is_valid_password(password) do
-    is_correct_length(password)
-    && has_consecutive_siblings(password)
-    && does_not_decrease(password)
+    is_correct_length(password) &&
+    has_consecutive_siblings(password) &&
+    does_not_decrease(password)
   end
 
-  def is_valid_password_extended(password) do
-    is_correct_length(password)
-    && has_consecutive_twins(password)
-    && does_not_decrease(password)
+  def is_valid_password_constrained(password) do
+    is_correct_length(password) &&
+    has_consecutive_twins(password) &&
+    does_not_decrease(password)
   end
 
   def part1 do
