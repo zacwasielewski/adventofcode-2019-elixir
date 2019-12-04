@@ -48,17 +48,28 @@ defmodule Day3 do
     |> plot_path()
   end
 
-  defp distance_from_central_port(coords) do
+  defp distance_from_central_port(coord) do
     # Manhattan Distance is |x1 - x2| + |y1 - y2|
     [x1, y1] = @central_port
-    [x2, y2] = coords
+    [x2, y2] = coord
     abs(x2 - x1) + abs(y2 - y1)
+  end
+
+  defp steps_to_coordinate(graph, coord) do
+    Enum.find_index(graph, fn el -> el == coord end)
+  end
+
+  def steps_to_intersection(graph1, graph2, intersection) do
+    s1 = steps_to_coordinate(graph1, intersection)
+    s2 = steps_to_coordinate(graph2, intersection)
+    s1 + s2
   end
 
   defp find_intersections(graph1, graph2) do
     mapset1 = MapSet.new(graph1)
     mapset2 = MapSet.new(graph2)
     MapSet.intersection(mapset1, mapset2)
+    |> MapSet.delete(@central_port) # Don't count the central port as an intersection
   end
 
   def distance_to_closest_intersection(wire1, wire2) do
@@ -66,7 +77,6 @@ defmodule Day3 do
     graph2 = plot_wire(wire2)
     
     find_intersections(graph1, graph2)
-    |> MapSet.delete(@central_port) # Don't count the central port as an intersection
     |> Enum.map(&distance_from_central_port/1)
     |> Enum.min
   end
@@ -76,12 +86,7 @@ defmodule Day3 do
     graph2 = plot_wire(wire2)
 
     find_intersections(graph1, graph2)
-    |> MapSet.delete(@central_port)
-    |> Enum.map(fn intersection ->
-      d1 = Enum.find_index(graph1, fn x -> x == intersection end)
-      d2 = Enum.find_index(graph2, fn x -> x == intersection end)
-      d1 + d2
-    end)
+    |> Enum.map(fn coord -> steps_to_intersection(graph1, graph2, coord) end)
     |> Enum.min
   end
 
