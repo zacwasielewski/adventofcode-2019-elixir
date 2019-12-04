@@ -56,7 +56,7 @@ defmodule Day3 do
   end
 
   defp find_intersections(graph1, graph2) do
-    mapset1 = MapSet.new(graph1) 
+    mapset1 = MapSet.new(graph1)
     mapset2 = MapSet.new(graph2)
     MapSet.intersection(mapset1, mapset2)
   end
@@ -71,10 +71,30 @@ defmodule Day3 do
     |> Enum.min
   end
 
+  def steps_to_closest_intersection(wire1, wire2) do
+    graph1 = plot_wire(wire1)
+    graph2 = plot_wire(wire2)
+
+    find_intersections(graph1, graph2)
+    |> MapSet.delete(@central_port)
+    |> Enum.map(fn intersection ->
+      d1 = Enum.find_index(graph1, fn x -> x == intersection end)
+      d2 = Enum.find_index(graph2, fn x -> x == intersection end)
+      d1 + d2
+    end)
+    |> Enum.min
+  end
+
   def part1 do
     [wire1, wire2] = get_input()
     distance_to_closest_intersection(wire1, wire2)
   end
+
+  def part2 do
+    [wire1, wire2] = get_input()
+    steps_to_closest_intersection(wire1, wire2)
+  end
 end
 
 IO.puts "Part 1: #{Day3.part1}"
+IO.puts "Part 2: #{Day3.part2}"
