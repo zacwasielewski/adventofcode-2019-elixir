@@ -15,6 +15,18 @@ defmodule Day4Test do
     refute Day4.is_valid_password(123789)
   end
 
+  test "part_2_example_1" do
+    assert Day4.is_valid_password_extended(112233)
+  end
+
+  test "part_2_example_2" do
+    refute Day4.is_valid_password_extended(123444)
+  end
+
+  test "part_2_example_3" do
+    assert Day4.is_valid_password_extended(111122)
+  end
+
   #test "part_1_example_1" do
   #  wire1 = "R75,D30,R83,U83,L12,D49,R71,U7,L72"
   #  wire2 = "U62,R66,U55,R34,D71,R55,D58,R83"
