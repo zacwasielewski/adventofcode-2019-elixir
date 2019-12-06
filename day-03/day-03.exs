@@ -1,15 +1,5 @@
 defmodule Day3 do
-  @input_file "day-03-input.txt"
   @central_port [0, 0]
-
-  defp get_input do
-    {:ok, input} = File.read(@input_file)
-    parse_input(input)
-  end
-
-  defp parse_input(input) do
-    input |> String.split("\n", trim: true)
-  end
 
   defp parse_wire(str) do
     String.split(str, ",", trim: true)
@@ -37,15 +27,11 @@ defmodule Day3 do
     graph ++ (1..magnitude |> Enum.map(plotter))
   end
 
-  defp plot_path(path) do
-    graph = [@central_port] # Begin at the central port
-    Enum.reduce(path, graph, fn vector, acc -> plot_vector(acc, vector) end)
-  end
-
   defp plot_wire(wire) do
-    wire
-    |> parse_wire()
-    |> plot_path()
+    wire_vectors = parse_wire(wire)
+    Enum.reduce(wire_vectors, [@central_port], fn (vector, graph) ->
+      plot_vector(graph, vector)
+    end)
   end
 
   defp distance_from_central_port(coord) do
@@ -68,6 +54,7 @@ defmodule Day3 do
   defp find_intersections(graph1, graph2) do
     mapset1 = MapSet.new(graph1)
     mapset2 = MapSet.new(graph2)
+
     MapSet.intersection(mapset1, mapset2)
     |> MapSet.delete(@central_port) # Don't count the central port as an intersection
   end
@@ -89,6 +76,17 @@ defmodule Day3 do
     |> Enum.map(fn coord -> steps_to_intersection(graph1, graph2, coord) end)
     |> Enum.min
   end
+end
+
+defmodule Day3Solver do
+  import Day3
+  
+  @input_file "day-03-input.txt"
+
+  defp get_input do
+    {:ok, input} = File.read(@input_file)
+    input |> String.split("\n", trim: true)
+  end
 
   def part1 do
     [wire1, wire2] = get_input()
@@ -101,5 +99,5 @@ defmodule Day3 do
   end
 end
 
-IO.puts "Part 1: #{Day3.part1}"
-IO.puts "Part 2: #{Day3.part2}"
+IO.puts "Part 1: #{Day3Solver.part1}"
+IO.puts "Part 2: #{Day3Solver.part2}"
