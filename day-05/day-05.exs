@@ -47,36 +47,6 @@ defmodule Day5 do
   
   # defp parse_parameter_mode(mode) do
   # end
-  
-  defp apply_operation(operation, intcode, opcode_pos) do
-   %{
-     inputs: [input1, input2],
-     output_pos: output_pos
-   } = get_instruction(intcode, opcode_pos)
-     output_value =
-     case operation do
-       :add -> input1 + input2
-       :multiply -> input1 * input2
-     end
-     List.replace_at(intcode, output_pos, output_value)
-  end
-  
-  # def process_instructions(intcode) do
-  #  # This won't work anymore!
-  #  # opcode_positions = Stream.take_every(0..length(intcode), 4)
-  #
-  #  Enum.reduce_while(opcode_positions, intcode, fn opcode_pos, acc ->
-  #    opcode = get_opcode(acc, opcode_pos)
-  #
-  #    case opcode do
-  #      1 -> {:cont, apply_operation(:add, acc, opcode_pos)}
-  #      2 -> {:cont, apply_operation(:multiply, acc, opcode_pos)}
-  #      3 -> {:cont, save_input(acc, opcode_pos)}
-  #      4 -> {:cont, output_value(acc, opcode_pos)}
-  #      99 -> {:halt, acc}
-  #    end
-  #  end)
-  # end
 
   defp do_instruction(1, intcode, position) do
     %{
@@ -98,6 +68,18 @@ defmodule Day5 do
     List.replace_at(intcode, output_pos, output_value)
   end
 
+  defp do_instruction(3, intcode, position, input_value) do
+    output_pos = Enum.at(intcode, position + 1)
+    List.replace_at(intcode, output_pos, input_value)
+  end
+
+  defp do_instruction(4, intcode, position) do
+    opcode_pos   = position
+    param_pos    = position + 1
+    output_value = Enum.at(intcode, param_pos)
+    IO.puts output_value
+  end
+
   defp normalize_opcode(opcode) do
     opcode_string = opcode
     |> Integer.to_string
@@ -116,7 +98,7 @@ defmodule Day5 do
   Process the opcode at the specified position, then return the
   updated intcode and position of the next opcode.
   """
-  defp process_intcode_position(intcode, position) do    
+  defp process_intcode_position(intcode, position, input) do    
     %{
       opcode: opcode,
       param1_mode: param1_mode,
@@ -127,31 +109,36 @@ defmodule Day5 do
     new_intcode = case opcode do
       1  -> do_instruction(1, intcode, position)
       2  -> do_instruction(2, intcode, position)
+      3  -> do_instruction(3, intcode, position, input)
+      4  -> do_instruction(4, intcode, position)
       99 -> intcode
     end
 
     new_position = case opcode do
       1  -> position + 4
       2  -> position + 4
+      3  -> position + 2
+      4  -> position + 2
       99 -> nil
     end
 
-    %{intcode: new_intcode, position: new_position}
+    %{intcode: new_intcode, position: new_position, input: nil}
   end
 
-  def run_program(intcode) do
+  def run_program(intcode, input \\ nil) do
     initial = %{
       intcode: intcode,
-      position: 0
+      position: 0,
+      input: input
     }
 
     result = Enum.reduce_while(0..Enum.count(intcode), initial, fn i, acc ->
-      %{ intcode: intcode, position: position } = acc
+      %{ intcode: intcode, position: position, input: input } = acc
 
       # Only process the intcode if we're positioned at an opcode.
       # Otherwise, return the accumulator intact and continue iterating.
       new_acc = cond do
-        i === position -> process_intcode_position(intcode, position)
+        i === position -> process_intcode_position(intcode, position, input)
         i !== position -> acc
       end
 
@@ -173,6 +160,12 @@ defmodule Day5 do
    intcode
    |> set_program_state(state)
    |> run_program()
+   |> get_program_output()
+  end
+
+  def run_program_with_input(intcode, input) do
+   intcode
+   |> run_program(input)
    |> get_program_output()
   end
 end
