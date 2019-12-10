@@ -29,33 +29,6 @@ defmodule Day5 do
       ]
     }
   end
-
-  #defp get_input_positions(intcode, opcode_pos) do
-  #  [
-  #    Enum.at(intcode, opcode_pos + 1),
-  #    Enum.at(intcode, opcode_pos + 2)
-  #  ]
-  #end
-  #
-  #defp get_input_values(intcode, opcode_pos) do
-  #  [input1_pos, input2_pos] = get_input_positions(intcode, opcode_pos)
-  #  [
-  #    Enum.at(intcode, input1_pos),
-  #    Enum.at(intcode, input2_pos)
-  #  ]
-  #end
-  #
-  #defp get_output_position(intcode, opcode_pos) do
-  #  Enum.at(intcode, opcode_pos + 3)
-  #end
-  
-  #defp get_instruction(intcode, opcode_pos) do
-  #  %{
-  #    opcode: get_opcode(intcode, opcode_pos),
-  #    inputs: get_input_values(intcode, opcode_pos),
-  #    output_pos: get_output_position(intcode, opcode_pos)
-  #  }
-  #end
   
   defp parse_program_state(state) do
     [_noun, _verb] = [div(state, 100), rem(state, 100)]
@@ -67,9 +40,6 @@ defmodule Day5 do
     |> List.replace_at(1, noun)
     |> List.replace_at(2, verb)
   end
-  
-  # defp parse_parameter_mode(mode) do
-  # end
 
   defp get_parameter(intcode, position, mode \\ 1) do
     case mode do
@@ -77,14 +47,6 @@ defmodule Day5 do
       1 -> Enum.at(intcode, position) # Immediate mode
     end
   end
-
-  #defp get_parameters(intcode, position, param_modes) do
-  #  param_modes
-  #  |> Enum.with_index
-  #  |> Enum.map(fn {mode, i} ->
-  #    get_parameter(intcode, position + 1 + i, mode)
-  #  end)
-  #end
 
   @doc """
   Opcode 1 adds together numbers read from two positions and stores the result in a third position.
@@ -115,8 +77,6 @@ defmodule Day5 do
   end
 
   def do_instruction(3, intcode, position, input_value) do
-    %{ param_modes: param_modes } = get_opcode(intcode, position)
-
     output_pos = get_parameter(intcode, position + 1)
     List.replace_at(intcode, output_pos, input_value)
   end
