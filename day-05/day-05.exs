@@ -1,38 +1,61 @@
 defmodule Day5 do
   defp get_opcode(intcode, position) do
     Enum.at(intcode, position)
-  end
-  
-  defp parse_opcode(opcode) do
-    
+    |> normalize_opcode
   end
 
-  defp get_input_positions(intcode, opcode_pos) do
-    [
-      Enum.at(intcode, opcode_pos + 1),
-      Enum.at(intcode, opcode_pos + 2)
-    ]
-  end
+  @doc """
+  Convert all opcodes to the parameterized format
+  """
+  defp normalize_opcode(opcode) do
+    opcode_string = opcode
+    |> Integer.to_string
+    |> String.pad_leading(5, "0")
 
-  defp get_input_values(intcode, opcode_pos) do
-    [input1_pos, input2_pos] = get_input_positions(intcode, opcode_pos)
-    [
-      Enum.at(intcode, input1_pos),
-      Enum.at(intcode, input2_pos)
-    ]
-  end
+    # Converting all the values of a map to integers is a little awkward:
+    # https://joyofelixir.com/10-maps/
 
-  defp get_output_position(intcode, opcode_pos) do
-    Enum.at(intcode, opcode_pos + 3)
-  end
-  
-  defp get_instruction(intcode, opcode_pos) do
+    pattern = ~r/(?<param3_mode>\d)(?<param2_mode>\d)(?<param1_mode>\d)(?<opcode>\d{2})/
+    r = Regex.named_captures(pattern, opcode_string)
+    |> Enum.map(fn {key, val} -> {String.to_atom(key), String.to_integer(val)} end)
+    |> Enum.into(%{})
+
     %{
-      opcode: get_opcode(intcode, opcode_pos),
-      inputs: get_input_values(intcode, opcode_pos),
-      output_pos: get_output_position(intcode, opcode_pos)
+      opcode: r[:opcode],
+      param_modes: [
+        r[:param1_mode],
+        r[:param2_mode],
+        r[:param3_mode]
+      ]
     }
   end
+
+  #defp get_input_positions(intcode, opcode_pos) do
+  #  [
+  #    Enum.at(intcode, opcode_pos + 1),
+  #    Enum.at(intcode, opcode_pos + 2)
+  #  ]
+  #end
+  #
+  #defp get_input_values(intcode, opcode_pos) do
+  #  [input1_pos, input2_pos] = get_input_positions(intcode, opcode_pos)
+  #  [
+  #    Enum.at(intcode, input1_pos),
+  #    Enum.at(intcode, input2_pos)
+  #  ]
+  #end
+  #
+  #defp get_output_position(intcode, opcode_pos) do
+  #  Enum.at(intcode, opcode_pos + 3)
+  #end
+  
+  #defp get_instruction(intcode, opcode_pos) do
+  #  %{
+  #    opcode: get_opcode(intcode, opcode_pos),
+  #    inputs: get_input_values(intcode, opcode_pos),
+  #    output_pos: get_output_position(intcode, opcode_pos)
+  #  }
+  #end
   
   defp parse_program_state(state) do
     [_noun, _verb] = [div(state, 100), rem(state, 100)]
@@ -48,63 +71,70 @@ defmodule Day5 do
   # defp parse_parameter_mode(mode) do
   # end
 
-  defp do_instruction(1, intcode, position) do
-    %{
-      inputs: [input1, input2],
-      output_pos: output_pos
-    } = get_instruction(intcode, position)
-
-    output_value = input1 + input2
-    List.replace_at(intcode, output_pos, output_value)
+  defp get_parameter(intcode, position, mode \\ 1) do
+    case mode do
+      0 -> Enum.at(intcode, Enum.at(intcode, position)) # Position mode
+      1 -> Enum.at(intcode, position) # Immediate mode
+    end
   end
 
-  defp do_instruction(2, intcode, position) do
-    %{
-      inputs: [input1, input2],
-      output_pos: output_pos
-    } = get_instruction(intcode, position)
+  #defp get_parameters(intcode, position, param_modes) do
+  #  param_modes
+  #  |> Enum.with_index
+  #  |> Enum.map(fn {mode, i} ->
+  #    get_parameter(intcode, position + 1 + i, mode)
+  #  end)
+  #end
 
-    output_value = input1 * input2
-    List.replace_at(intcode, output_pos, output_value)
+  @doc """
+  Opcode 1 adds together numbers read from two positions and stores the result in a third position.
+  """
+  def do_instruction(1, intcode, position) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2_val = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+    output_pos = get_parameter(intcode, position + 3)
+
+    output_val = param1_val + param2_val
+    List.replace_at(intcode, output_pos, output_val)
   end
 
-  defp do_instruction(3, intcode, position, input_value) do
-    output_pos = Enum.at(intcode, position + 1)
+  @doc """
+  Opcode 1 adds together numbers read from two positions and stores the result in a third position.
+  """
+  def do_instruction(2, intcode, position) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2_val = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+    output_pos = get_parameter(intcode, position + 3)
+
+    output_val = param1_val * param2_val
+    List.replace_at(intcode, output_pos, output_val)
+  end
+
+  def do_instruction(3, intcode, position, input_value) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    output_pos = get_parameter(intcode, position + 1)
     List.replace_at(intcode, output_pos, input_value)
   end
 
-  defp do_instruction(4, intcode, position) do
-    opcode_pos   = position
-    param_pos    = position + 1
-    output_value = Enum.at(intcode, param_pos)
-    IO.puts output_value
-  end
+  def do_instruction(4, intcode, position) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
 
-  defp normalize_opcode(opcode) do
-    opcode_string = opcode
-    |> Integer.to_string
-    |> String.pad_leading(5, "0")
-
-    # Converting all the values of a map to integers is a little awkward:
-    # https://joyofelixir.com/10-maps/
-
-    pattern = ~r/(?<param3_mode>\d)(?<param2_mode>\d)(?<param1_mode>\d)(?<opcode>\d{2})/
-    Regex.named_captures(pattern, opcode_string)
-    |> Enum.map(fn {key, val} -> {String.to_atom(key), String.to_integer(val)} end)
-    |> Enum.into(%{})
+    output_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    IO.puts "OUTPUT: #{output_val}"
+    intcode
   end
 
   @doc """
   Process the opcode at the specified position, then return the
   updated intcode and position of the next opcode.
   """
-  defp process_intcode_position(intcode, position, input) do    
-    %{
-      opcode: opcode,
-      param1_mode: param1_mode,
-      param2_mode: param2_mode,
-      param3_mode: param3_mode
-    } = get_opcode(intcode, position) |> normalize_opcode
+  defp process_intcode_position(intcode, position, input) do
+    %{ opcode: opcode } = get_opcode(intcode, position)
 
     new_intcode = case opcode do
       1  -> do_instruction(1, intcode, position)
@@ -173,8 +203,8 @@ end
 defmodule Day5Solver do
   import Day5
 
-  #@input_file "day-05-input.txt"
-  @input_file "day-02-input.txt"
+  @input_file "day-05-input.txt"
+  #@input_file "day-02-input.txt"
 
   defp parse_intcode_string(string) do
     string
@@ -189,22 +219,22 @@ defmodule Day5Solver do
 
   def part1 do
     intcode = get_input()
-    run_program(intcode)
+    run_program_with_input(intcode, 1)
   end
 
-   def part2 do
-    intcode = get_input()
-    goal = 19_690_720
-  
-    # All possible input states, assuming nouns and verbs are limited to two digits
-    100..9999
-    |> Enum.filter(fn state ->
-      run_program_with_state(intcode, state) === goal
-    end)
-    |> List.first()
-   end
+  #def part2 do
+  #  intcode = get_input()
+  #  goal = 19_690_720
+  #
+  #  # All possible input states, assuming nouns and verbs are limited to two digits
+  #  100..9999
+  #  |> Enum.filter(fn state ->
+  #    run_program_with_state(intcode, state) === goal
+  #  end)
+  #  |> List.first()
+  #end
 end
 
-#IO.puts "Part 1: "
-#IO.inspect {Day5Solver.part1()}
+IO.puts "Part 1: "
+IO.inspect {Day5Solver.part1()}
 # IO.puts "Part 2: #{Day5.part2}"
