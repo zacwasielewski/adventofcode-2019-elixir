@@ -7,7 +7,7 @@ defmodule Day5 do
   @doc """
   Convert all opcodes to the parameterized format
   """
-  defp normalize_opcode(opcode) do
+  def normalize_opcode(opcode) do
     opcode_string = opcode
     |> Integer.to_string
     |> String.pad_leading(5, "0")
@@ -48,69 +48,161 @@ defmodule Day5 do
     end
   end
 
-  @doc """
-  Opcode 1 adds together numbers read from two positions and stores the result in a third position.
-  """
-  def do_instruction(1, intcode, position) do
-    %{ param_modes: param_modes } = get_opcode(intcode, position)
-
-    param1_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
-    param2_val = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
-    output_pos = get_parameter(intcode, position + 3)
-
-    output_val = param1_val + param2_val
-    List.replace_at(intcode, output_pos, output_val)
+  defp get_output_parameter(intcode, position) do
+    get_parameter(intcode, position, 1)
   end
 
   @doc """
   Opcode 1 adds together numbers read from two positions and stores the result in a third position.
   """
-  def do_instruction(2, intcode, position) do
+  def do_instruction(1, intcode, position, _input) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    #IO.inspect intcode
+    #IO.inspect position
+
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2 = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+    param3 = get_output_parameter(intcode, position + 3)
+    output_val = param1 + param2
+    
+    %{
+      intcode: List.replace_at(intcode, param3, output_val),
+      position: position + 4
+    }
+  end
+
+  @doc """
+  Opcode 1 adds together numbers read from two positions and stores the result in a third position.
+  """
+  def do_instruction(2, intcode, position, _input) do
     %{ param_modes: param_modes } = get_opcode(intcode, position)
 
     param1_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
     param2_val = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
-    output_pos = get_parameter(intcode, position + 3)
-
+    output_pos = get_output_parameter(intcode, position + 3)
     output_val = param1_val * param2_val
-    List.replace_at(intcode, output_pos, output_val)
+
+    %{
+      intcode: List.replace_at(intcode, output_pos, output_val),
+      position: position + 4
+    }
   end
 
-  def do_instruction(3, intcode, position, input_value) do
-    output_pos = get_parameter(intcode, position + 1)
-    List.replace_at(intcode, output_pos, input_value)
+  def do_instruction(3, intcode, position, input) do
+    output_pos = get_output_parameter(intcode, position + 1)
+    
+    %{
+      intcode: List.replace_at(intcode, output_pos, input),
+      position: position + 2
+    }
   end
 
-  def do_instruction(4, intcode, position) do
+  def do_instruction(4, intcode, position, _input) do
     %{ param_modes: param_modes } = get_opcode(intcode, position)
 
-    output_val = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
-    IO.puts "OUTPUT: #{output_val}"
-    intcode
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    IO.puts "OUTPUT: #{param1}"
+
+    %{
+      intcode: intcode,
+      position: position + 2
+    }
+  end
+
+  @doc """
+  Opcode 5 is jump-if-true: if the first parameter is non-zero, it
+  sets the instruction pointer to the value from the second parameter.
+  Otherwise, it does nothing.
+  """
+  def do_instruction(5, intcode, position, _input) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2 = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+
+    new_position = if param1 !== 0, do: param2, else: position + 3
+
+    %{
+      intcode: intcode,
+      position: new_position
+    }
+  end
+
+  @doc """
+  Opcode 6 is jump-if-false: if the first parameter is zero, it
+  sets the instruction pointer to the value from the second parameter.
+  Otherwise, it does nothing.
+  """
+  def do_instruction(6, intcode, position, _input) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2 = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+
+    new_position = if param1 === 0, do: param2, else: position + 3
+
+    %{
+      intcode: intcode,
+      position: new_position
+    }
+  end
+
+  @doc """
+  Opcode 7 is less than: if the first parameter is less than the second
+  parameter, it stores 1 in the position given by the third parameter.
+  Otherwise, it stores 0.
+  """
+  def do_instruction(7, intcode, position, _input) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2 = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+    param3 = get_output_parameter(intcode, position + 3)
+
+    output_val = if param1 < param2, do: 1, else: 0
+
+    %{
+      intcode: List.replace_at(intcode, param3, output_val),
+      position: position + 4
+    }
+  end
+
+  @doc """
+  Opcode 8 is equals: if the first parameter is equal to the second parameter,
+  it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+  """
+  def do_instruction(8, intcode, position, _input) do
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
+
+    param1 = get_parameter(intcode, position + 1, Enum.at(param_modes, 0))
+    param2 = get_parameter(intcode, position + 2, Enum.at(param_modes, 1))
+    param3 = get_parameter(intcode, position + 3) # Out
+
+    output_val = if param1 === param2, do: 1, else: 0
+
+    %{
+      intcode: List.replace_at(intcode, param3, output_val),
+      position: position + 4
+    }
+  end
+
+  def do_instruction(99, intcode, _position, _input) do
+    %{ intcode: intcode, position: nil }
   end
 
   @doc """
   Process the opcode at the specified position, then return the
   updated intcode and position of the next opcode.
   """
-  defp process_intcode_position(intcode, position, input) do
+  def process_intcode_position(intcode, position, input) do
     %{ opcode: opcode } = get_opcode(intcode, position)
 
-    new_intcode = case opcode do
-      1  -> do_instruction(1, intcode, position)
-      2  -> do_instruction(2, intcode, position)
-      3  -> do_instruction(3, intcode, position, input)
-      4  -> do_instruction(4, intcode, position)
-      99 -> intcode
-    end
-
-    new_position = case opcode do
-      1  -> position + 4
-      2  -> position + 4
-      3  -> position + 2
-      4  -> position + 2
-      99 -> nil
-    end
+    result = do_instruction(opcode, intcode, position, input)
+    %{
+      intcode: new_intcode,
+      position: new_position
+    } = result
 
     %{intcode: new_intcode, position: new_position, input: nil}
   end
@@ -156,7 +248,7 @@ defmodule Day5 do
   def run_program_with_input(intcode, input) do
    intcode
    |> run_program(input)
-   |> get_program_output()
+   #|> get_program_output()
   end
 end
 
@@ -182,19 +274,14 @@ defmodule Day5Solver do
     run_program_with_input(intcode, 1)
   end
 
-  #def part2 do
-  #  intcode = get_input()
-  #  goal = 19_690_720
-  #
-  #  # All possible input states, assuming nouns and verbs are limited to two digits
-  #  100..9999
-  #  |> Enum.filter(fn state ->
-  #    run_program_with_state(intcode, state) === goal
-  #  end)
-  #  |> List.first()
-  #end
+  def part2 do
+    intcode = get_input()
+    run_program_with_input(intcode, 5)
+  end
 end
 
 IO.puts "Part 1: "
 IO.inspect {Day5Solver.part1()}
-# IO.puts "Part 2: #{Day5.part2}"
+IO.puts "Part 2: "
+IO.inspect {Day5Solver.part2()}
+

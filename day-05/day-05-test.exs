@@ -23,6 +23,13 @@ defmodule Day5Test do
     assert Day5.run_program([1,1,1,4,99,5,6,0,99]) === [30,1,1,4,2,5,6,0,99]
   end
 
+  #test "part_2_example_1" do
+  #  # 1,0,0,0,99 becomes 2,0,0,0,99 (1 + 1 = 2).
+  #  program = [3,9,8,9,10,9,4,9,99,-1,8]
+  #  assert Day5.run_program_with_input(program, 8) === 1
+  #  #assert Day5.run_program_with_input(program, 9) === 0
+  #end
+
   #test "part_2" do
   #  assert Day5Solver.part2() === 4847
   #end
