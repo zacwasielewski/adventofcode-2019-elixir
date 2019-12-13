@@ -1,6 +1,6 @@
 defmodule Day9 do
   defp get_opcode(intcode, position) do
-    Enum.at(intcode, position)
+    retrieve_value(intcode, position)
     |> normalize_opcode
   end
 
@@ -30,26 +30,58 @@ defmodule Day9 do
     }
   end
 
+  def retrieve_value(intcode, position) do
+    Enum.at(intcode, position, 0)
+  end
+
+  @doc """
+  If the store position exceeds the intcode's length, increase program "memory" as needed
+  """
+  def store_value(intcode, position, value) do
+    program_memory_size = length(intcode) - 1
+
+    if position > program_memory_size do
+      extra_memory_needed = position - program_memory_size # Off-by-one errors are the worst
+      extra_memory = Enum.map(1..extra_memory_needed, fn _ -> 0 end)
+
+      List.replace_at(intcode ++ extra_memory, position, value)
+    else
+      List.replace_at(intcode, position, value)
+    end
+  end
+
   def get_parameter(state, n) do
     %{ intcode: intcode, position: position, relative_base: relative_base } = state
     %{ param_modes: param_modes } = get_opcode(intcode, position)
     
-    mode = Enum.at(param_modes, n)
-    position = state[:position] + n + 1
+    #IO.inspect get_opcode(intcode, position)
 
-    case mode do
-      0 -> Enum.at(intcode, Enum.at(intcode, position)) # Position mode
-      1 -> Enum.at(intcode, position) # Immediate mode
-      2 -> Enum.at(intcode, Enum.at(intcode, position + relative_base)) # Relative mode
+    param_mode = Enum.at(param_modes, n-1)
+    param_position = position + n
+    param_value = retrieve_value(intcode, param_position)
+
+    #IO.inspect [ n, param_mode, param_value ]
+
+    case param_mode do
+      0 -> retrieve_value(intcode, param_value) # Position mode
+      1 -> param_value # Immediate mode
+      2 -> retrieve_value(intcode, param_value + relative_base) # Relative mode
     end
   end
 
   def get_parameter(state, n, :write) do
     %{ intcode: intcode, position: position, relative_base: relative_base } = state
+    %{ param_modes: param_modes } = get_opcode(intcode, position)
     
-    write_position = position + n + 1
+    param_mode = Enum.at(param_modes, n-1)
+    param_position = position + n
+    param_value = retrieve_value(intcode, param_position)
 
-    Enum.at(intcode, write_position)
+    case param_mode do
+      0 -> param_value
+      1 -> param_value
+      2 -> param_value + relative_base
+    end
   end
 
   @doc """
@@ -58,13 +90,16 @@ defmodule Day9 do
   def do_instruction(1, state) do
     %{ intcode: intcode, position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
-    param3 = get_parameter(state, 2, :write)
-    
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+    param3 = get_parameter(state, 3, :write)
+
+    #IO.puts "params: [#{param1}, #{param2}, #{param3}]"
+    #IO.puts "Store #{param1} + #{param2} at position #{param3} ->"
+
     state
     |> Map.merge(%{
-      intcode: List.replace_at(intcode, param3, param1 + param2),
+      intcode: store_value(intcode, param3, param1 + param2),
       position: position + 4
     })
   end
@@ -75,13 +110,16 @@ defmodule Day9 do
   def do_instruction(2, state) do
     %{ intcode: intcode, position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
-    param3 = get_parameter(state, 2, :write)
-    
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+    param3 = get_parameter(state, 3, :write)
+
+    #IO.puts "params: [#{param1}, #{param2}, #{param3}]"
+    #IO.puts "Store #{param1} * #{param2} (#{param1 * param2}) at position #{param3} ->"
+
     state
     |> Map.merge(%{
-      intcode: List.replace_at(intcode, param3, param1 * param2),
+      intcode: store_value(intcode, param3, param1 * param2),
       position: position + 4
     })
   end
@@ -89,11 +127,14 @@ defmodule Day9 do
   def do_instruction(3, state) do
     %{ intcode: intcode, position: position, input: input } = state
 
-    param1 = get_parameter(state, 0, :write)
-    
+    param1 = get_parameter(state, 1, :write)
+
+    #IO.puts "params: [#{param1}]"
+    #IO.puts "Store program input (#{input}) at position #{param1} ->"
+
     state
     |> Map.merge(%{
-      intcode: List.replace_at(intcode, param1, input),
+      intcode: store_value(intcode, param1, input),
       position: position + 2
     })
   end
@@ -101,7 +142,10 @@ defmodule Day9 do
   def do_instruction(4, state) do
     %{ position: position, output: output } = state
 
-    param1 = get_parameter(state, 0)
+    param1 = get_parameter(state, 1)
+
+    #IO.puts "params: [#{param1}]"
+    #IO.puts "Append #{param1} to the program output ->"
 
     state
     |> Map.merge(%{
@@ -118,8 +162,15 @@ defmodule Day9 do
   def do_instruction(5, state) do
     %{ position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+
+    #IO.puts "params: [#{param1}, #{param2}]"
+    #if param1 !== 0 do
+    #  IO.puts "#{param1} is non-zero, so set the pointer to #{param2} ->"
+    #else
+    #  IO.puts "#{param1} is NOT non-zero, so do nothing ->"
+    #end
 
     state
     |> Map.merge(%{
@@ -135,8 +186,15 @@ defmodule Day9 do
   def do_instruction(6, state) do
     %{ position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+
+    #IO.puts "params: [#{param1}, #{param2}]"
+    #if param1 !== 0 do
+    #  IO.puts "#{param1} is zero, so set the pointer to #{param2} ->"
+    #else
+    #  IO.puts "#{param1} is NOT zero, so do nothing ->"
+    #end
 
     state
     |> Map.merge(%{
@@ -152,15 +210,22 @@ defmodule Day9 do
   def do_instruction(7, state) do
     %{ intcode: intcode, position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
-    param3 = get_parameter(state, 2, :write)
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+    param3 = get_parameter(state, 3, :write)
 
-    store_value = if param1 < param2, do: 1, else: 0
+    value = if param1 < param2, do: 1, else: 0
+
+    #IO.puts "params: [#{param1}, #{param2}, #{param3}]"
+    #if param1 < param2 do
+    #  IO.puts "#{param1} is less than #{param2}, so store 1 at position #{param3} ->"
+    #else
+    #  IO.puts "#{param1} is NOT less than #{param2}, so store 0 at position #{param3} ->"
+    #end
 
     state
     |> Map.merge(%{
-      intcode: List.replace_at(intcode, param3, store_value),
+      intcode: store_value(intcode, param3, value),
       position: position + 4,
     })
   end
@@ -172,15 +237,22 @@ defmodule Day9 do
   def do_instruction(8, state) do
     %{ intcode: intcode, position: position } = state
 
-    param1 = get_parameter(state, 0)
-    param2 = get_parameter(state, 1)
-    param3 = get_parameter(state, 2, :write)
+    param1 = get_parameter(state, 1)
+    param2 = get_parameter(state, 2)
+    param3 = get_parameter(state, 3, :write)
 
-    store_value = if param1 === param2, do: 1, else: 0
+    value = if param1 === param2, do: 1, else: 0
+
+    #IO.puts "params: [#{param1}, #{param2}, #{param3}]"
+    #if param1 === param2 do
+    #  IO.puts "#{param1} equals #{param2}, so store 1 at position #{param3} ->"
+    #else
+    #  IO.puts "#{param1} does NOT equal #{param2}, so store 0 at position #{param3} ->"
+    #end
 
     state
     |> Map.merge(%{
-      intcode: List.replace_at(intcode, param3, store_value),
+      intcode: store_value(intcode, param3, value),
       position: position + 4,
     })
   end
@@ -193,7 +265,10 @@ defmodule Day9 do
   def do_instruction(9, state) do
     %{ position: position, relative_base: relative_base } = state
 
-    param1 = get_parameter(state, 0)
+    param1 = get_parameter(state, 1)
+
+    #IO.puts "params: [#{param1}]"
+    #IO.puts "Adjust the relative base to #{relative_base} + #{param1} ->"
 
     state
     |> Map.merge(%{
@@ -203,6 +278,10 @@ defmodule Day9 do
   end
 
   def do_instruction(99, state) do
+
+    #IO.puts "params: -"
+    #IO.puts "Halt! ->"
+
     state
     |> Map.merge(%{
       position: nil,
@@ -212,6 +291,8 @@ defmodule Day9 do
   def process_program_state(state) do
     %{ intcode: intcode, position: position } = state
     %{ opcode: opcode } = get_opcode(intcode, position)
+
+    #IO.puts "opcode: #{opcode}"
 
     do_instruction(opcode, state)
   end
@@ -225,6 +306,10 @@ defmodule Day9 do
       relative_base: 0
     }
 
+    #IO.puts "\n=== START PROGRAM:"
+    #IO.inspect initial_state
+    #IO.puts ""
+
     result = Enum.reduce_while(0..Enum.count(intcode), initial_state, fn i, state ->
       %{ position: position } = state
 
@@ -235,6 +320,11 @@ defmodule Day9 do
         i !== position -> state
       end
 
+      #if i === position do
+      #  IO.inspect new_state, charlists: :as_lists
+      #  IO.puts ""
+      #end
+
       if is_nil(new_state[:position]) do
         {:halt, new_state}
       else
@@ -242,18 +332,22 @@ defmodule Day9 do
       end
     end)
     
-    result
+    result |> free_program_memory( length(intcode) )
   end
 
   def get_program_output(result) do
     result[:output] |> List.last
+  end
+
+  def free_program_memory(result, memory_size) do
+    result |> Map.update!(:intcode, &( Enum.take(&1, memory_size) ))
   end
 end
 
 defmodule Day9Solver do
   import Day9
 
-  @input_file "day-05-input.txt"
+  @input_file "day-09-input.txt"
   #@input_file "day-02-input.txt"
 
   defp parse_intcode_string(string) do
@@ -270,7 +364,7 @@ defmodule Day9Solver do
   def part1 do
     intcode = get_input()
     run_program(intcode, 1)
-    |> get_program_output
+    #|> get_program_output
   end
 
   def part2 do
@@ -280,5 +374,6 @@ defmodule Day9Solver do
   end
 end
 
-IO.puts "Day 9, Part 1: #{Day9Solver.part1()}"
+IO.puts "Day 9, Part 1:"
+IO.inspect Day9Solver.part1()
 #IO.puts "Day 9, Part 2: #{Day9Solver.part2()}"
